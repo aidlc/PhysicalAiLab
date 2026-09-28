@@ -1,1 +1,1 @@
-# physical_ai
+# Physical-AI-and-Robotics-Labs 

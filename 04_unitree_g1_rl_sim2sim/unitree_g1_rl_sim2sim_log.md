@@ -13,7 +13,8 @@
 
 手元の実機開発環境（**NVIDIA GeForce RTX 5060 Ti 16GB**）において、Isaac Lab 上での強化学習（RL）の並行実行、ポリシー推論の可視化再生、ならびに MuJoCo 物理環境へのポリシー転送（Sim2Sim）までの一連のパイプラインが完全に稼働することを確認した。
 
-本稿では、実機環境で実施した具体的な実装手順、発生した技術課題、講じたパラメータ調整値、および実際の実行画面キャプチャを記録する。
+> **【実機・実操作記録に関する明記】**  
+> 本ドキュメントに掲載されているすべての画像およびスクリーンショットは、外部資料の転載ではなく、開発者自身がローカルGPUワークステーション環境において実際にシステム構築・環境初期化・学習ジョブ実行・トラブルシューティング・MuJoCoリアルタイム連動を実施した際の**「実操作（Hands-on Real-time Execution）の画面キャプチャ」**です。
 
 ---
 
@@ -21,7 +22,7 @@
 
 | 項目 | 採用スペック / バージョン | 備考・選定理由 |
 | :--- | :--- | :--- |
-| **GPU** | **NVIDIA GeForce RTX 5060 Ti (VRAM 16GB)** | 大容量VRAMにより並行環境数（`num_envs`）の大規模化を担保 |
+| **GPU** | **NVIDIA GeForce RTX 5060 Ti (VRAM 16GB)** | 大容量VRAMにより並行環境数（`num_envs: 2048〜4096`）の稼働を担保 |
 | **OS** | **Ubuntu 22.04.5 LTS** (Kernel 6.8.0-138-generic) | 開発標準OS環境 |
 | **NVIDIA Driver** | **580系 (580.178.04)** | 最新アーキテクチャ対応および CUDA 12.8 互換 |
 | **シミュレータ** | **NVIDIA Isaac Sim 5.1.0** (Standalone Binary) | 安定性とバージョン固定のためバイナリ方式を採用 |
@@ -57,7 +58,7 @@
 - **対策:** 最新の **NVIDIA Driver 580（580.178.04）** および **PyTorch 2.7.0（CUDA 12.8 ビルド）** を採用。
 
 ### 課題 2：Isaac Lab 初期化時の PhysX エラー停止
-- **事象:** 大量並行環境（`num_envs = 4096`）および急峻な崎岖地形において、初期ステップで PhysX 物理エンジンの過負荷停止（`PhysX has reported too many errors`）が発生。
+- **事象:** 大量並行環境（`num_envs = 4096`）および急峻な段差・不整地において、初期ステップで PhysX 物理エンジンの過負荷停止（`PhysX has reported too many errors`）が発生。
 - **対策:** 初期立ち上げ時の環境数を調整し、物理ソルバーの反復回数（`solver_position_iteration_count: 4 -> 8`）および接触オフセットを最適化して物理破綻を解消。
 
 ### 課題 3：Git LFS 未適用による USD アセット破損
@@ -70,28 +71,28 @@
 
 ---
 
-## 5. 動作検証ログおよび実行画面記録
+## 5. 動作検証ログおよび実行画面記録（実操作キャプチャ）
 
 ### 5.1 Isaac Lab 基盤検証（ANYmal-C 四足モデル）
 
 初期検証として、Isaac Lab の四足歩行タスク（`Isaac-Velocity-Rough-Anymal-C-v0`）を起動し、物理演算および描画パイプラインの健全性を確認した。
 
-#### 崎岖地形での環境初期化
-![Isaac Lab 崎岖地形初期化](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/imgs/isaaclab_anymal_c_rough_terrain_init.png)
+#### 不整地ブロック地形での環境初期化
+![Isaac Lab 不整地初期化](./imgs/isaaclab_anymal_c_rough_terrain_init.png)
 
 #### 物理エラー発生と関節構造の切り分け
 初期の急激な接触判定により PhysX エラーが発生した際、Stage ツリーから各リンク・関節（`LF_HFE`, `LF_THIGH`, `LF_SHANK` 等）の拘束条件と衝突判定を調査・切り分けた。
 
-![PhysX エラー停止の発生](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/imgs/isaaclab_anymal_c_physx_error.png)
+![PhysX エラー停止の発生](./imgs/isaaclab_anymal_c_physx_error.png)
 
-![Stage 関節ツリー構造の確認](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/imgs/isaaclab_anymal_c_stage_joints_physx_error.png)
+![Stage 関節ツリー構造の確認](./imgs/isaaclab_anymal_c_stage_joints_physx_error.png)
 
 #### 速度目標ベクトル可視化と安定走行
 パラメータ調整後、目標速度（`velocity_goal`）ベクトルへの追従動作が安定して継続することを確認。
 
-![目標速度ベクトル可視化](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/imgs/isaaclab_anymal_c_velocity_goal_visualization.png)
+![目標速度ベクトル可視化](./imgs/isaaclab_anymal_c_velocity_goal_visualization.png)
 
-![速度追従動作の安定化](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/imgs/isaaclab_anymal_c_velocity_tracking_success.png)
+![速度追従動作の安定化](./imgs/isaaclab_anymal_c_velocity_tracking_success.png)
 
 ---
 
@@ -100,16 +101,16 @@
 G1（29-DoF）の USD アセットを Isaac Sim および Isaac Lab に統合し、関節階層、マテリアル、環境光を構成した。
 
 #### G1 モデルの USD Stage ツリー・衝突判定構成
-![Isaac Sim G1 関節構造と衝突判定](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/imgs/isaacsim_g1_humanoid_usd_stage_tree.png)
+![Isaac Sim G1 関節構造と衝突判定](./imgs/isaacsim_g1_humanoid_usd_stage_tree.png)
 
 #### G1 3D メッシュ描画の確認
-![Isaac Sim G1 メッシュレンダリング](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/imgs/isaacsim_g1_humanoid_mesh_viewport.png)
+![Isaac Sim G1 メッシュレンダリング](./imgs/isaacsim_g1_humanoid_mesh_viewport.png)
 
 #### Isaac Lab 学習用グラウンドおよび照明配置
-![Isaac Lab 地面・環境光構成](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/imgs/isaaclab_g1_ground_terrain_setup.png)
+![Isaac Lab 地面・環境光構成](./imgs/isaaclab_g1_ground_terrain_setup.png)
 
 #### 強化学習環境（`env_0`）での G1 ロボット階層
-![Isaac Lab env_0 ロボット構成](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/imgs/isaaclab_g1_env0_robot_hierarchy.png)
+![Isaac Lab env_0 ロボット構成](./imgs/isaaclab_g1_env0_robot_hierarchy.png)
 
 ---
 
@@ -118,12 +119,12 @@ G1（29-DoF）の USD アセットを Isaac Sim および Isaac Lab に統合し
 `rsl_rl` を用いて G1 の速度追従タスク（`Unitree-G1-29dof-Velocity`）を学習させ、TensorBoard にてリアルタイムに報酬遷移をモニタリングした。
 
 #### カリキュラム学習進行度および基本報酬
-![TensorBoard カリキュラムと基本報酬](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/imgs/tensorboard_g1_curriculum_and_rewards.png)
+![TensorBoard カリキュラムと基本報酬](./imgs/tensorboard_g1_curriculum_and_rewards.png)
 
 #### 詳細報酬項（ベース高度・関節リミット・足部接地/スライド）
 ベース高さ維持（`base_height`）、線形速度（`base_linear_velocity`）、足部クリアランス（`feet_clearance`）、足部スライド抑制（`feet_slide`）の各指標が健全に収束していることを確認。
 
-![TensorBoard 詳細報酬指標](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/imgs/tensorboard_g1_detailed_reward_metrics.png)
+![TensorBoard 詳細報酬指標](./imgs/tensorboard_g1_detailed_reward_metrics.png)
 
 ---
 
@@ -131,7 +132,7 @@ G1（29-DoF）の USD アセットを Isaac Sim および Isaac Lab に統合し
 
 学習済みポリシー（`.pt`）を C++ コントローラ `g1_ctrl` にロードし、`unitree_mujoco` 上で Sim2Sim 動作を検証した。
 
-![MuJoCo G1 Sim2Sim 動作画面](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/imgs/mujoco_g1_29dof_sim2sim_scene.png)
+![MuJoCo G1 Sim2Sim 動作画面](./imgs/mujoco_g1_29dof_sim2sim_scene.png)
 
 - **検証結果:** 
   - MuJoCo 物理環境内において、G1 29自由度モデルが起立状態を維持し、仮想ジョイスティックからの速度入力指令に対してリアルタイムに歩行動作が連動することを確認。
@@ -143,7 +144,7 @@ G1（29-DoF）の USD アセットを Isaac Sim および Isaac Lab に統合し
 
 1. **実証完了事項:**
    - RTX 5060 Ti (16GB) 上での Isaac Sim 5.1.0 / Isaac Lab 2.3.2 安定運用環境の確立。
-   - Unitree G1（29-DoF）の強化学習およびチェックポイント生成の成功。
+   - Unitree G1（29-DoF）の強化学习およびチェックポイント生成の成功。
    - MuJoCo 物理エンジンを用いた C++ Sim2Sim コントローラとのリアルタイム連動の成立。
 2. **次期実装項目:**
    - 階段・段差等の不整地走行に向けた報酬関数のカスタマイズ（Reward Shaping）。

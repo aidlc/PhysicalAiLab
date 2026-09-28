@@ -36,7 +36,7 @@ PhysicalAiLab/
 │   └── closed_loop_trajectory_control.md
 └── 04_unitree_g1_rl_sim2sim/       # Unitree G1 humanoid RL & MuJoCo Sim2Sim pipeline
     ├── unitree_g1_rl_sim2sim_log_en.md (English Implementation Log)
-    ├── unitree_g1_rl_sim2sim_log_ja.md (Japanese Implementation Log)
+    ├── unitree_g1_rl_sim2sim_log.md (Japanese Implementation Log)
     └── imgs/                       # 12 real-time verification screenshots
 ```
 
@@ -73,7 +73,7 @@ PhysicalAiLab/
   - Parallelized velocity-tracking training (`rsl_rl`) for the 29-DoF Unitree G1 humanoid model.
   - Real-time TensorBoard training telemetry monitoring (curriculum levels, reward terms, contact stability).
   - Cross-simulator transfer (Sim2Sim) into the MuJoCo physics engine via Unitree SDK2 and a standalone C++ controller (`g1_ctrl`), enabling real-time locomotion driven by virtual gamepad inputs.
-  - Complete bilingual documentation available in both [English](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/unitree_g1_rl_sim2sim_log_en.md) and [Japanese](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/unitree_g1_rl_sim2sim_log_ja.md).
+  - Complete bilingual documentation available in both [English](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/unitree_g1_rl_sim2sim_log_en.md) and [Japanese](file:///root/bra/PhysicalAiLab/04_unitree_g1_rl_sim2sim/unitree_g1_rl_sim2sim_log.md).
 
 ---
 
